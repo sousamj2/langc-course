@@ -99,22 +99,22 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
         status_code=429,
         content=ErrorResponse(
             error="Rate limit exceeded",
-            details=str(exc),
+            detail=str(exc),
         ).model_dump(),
     )
 
-    # Handle other exceptions
-    @app.exception_handler(Exception)
-    async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        """Handle generic exceptions."""
-        logger.error("Unhandled exception", extra={"extra_data": {"error": str(exc)}})
-        return JSONResponse(
-            status_code=500,
-            content=ErrorResponse(
-                error="Internal Server Error",
-                details=str(exc),
-            ).model_dump(),
-        )
+# Handle other exceptions
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Handle generic exceptions."""
+    logger.error("Unhandled exception", extra={"extra_data": {"error": str(exc)}})
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(
+            error="Internal Server Error",
+            detail=str(exc),
+        ).model_dump(),
+    )
 
 # ==============================
 # ENDPOINTS
@@ -154,7 +154,7 @@ async def chat(request: Request, body: ChatRequest):
         )
 
     # ---- Step 2: Cache lookup ----
-    if settings.cache_enabled:
+    if cache:
         cached_response = cache.get(cleaned_message)
         if cached_response:
             metrics.record_request(latency_ms=0, cache_hit=True)

@@ -27,7 +27,7 @@ from google.genai import types
 
 # Initiatilze the official GenAI client (move to main.py ?)
 # (It automatically picks the GEMINI_API_KEY environment variable)
-client = genai.Client()
+# client = genai.Client()
 
 class AgentState(TypedDict):
     """

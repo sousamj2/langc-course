@@ -28,7 +28,7 @@ class JSONFormatter(logging.Formatter):
         # Merge any extra data attached to the records
         if hasattr(record, "extra_data"):
             log_obj.update(record.extra_data)
-        return json.dump(log_obj)
+        return json.dumps(log_obj)
 
 def get_logger (name: str = "production-api") -> logging.Logger:
     """Create a structure JSON logger."""
@@ -59,6 +59,7 @@ class MetricsCollector:
         self._tokens_output = 0
         self._cache_hits = 0
         self._cache_misses = 0
+        self._latency_count = 0
         
     def record_request(
         self,
