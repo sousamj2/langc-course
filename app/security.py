@@ -102,14 +102,14 @@ class PIIDetector:
     Works on BOTH input (before LLM) and output (before client).
     """
     PATTERNS = {
-        "email": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
-        "phone": re.compile(r"\b\+?[1-9]\d{1,14}\b"),
-        "ssn": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
-        "credit_card": re.compile(r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b"),
-        "ip4_address": re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"),
-        "ip6_address": re.compile(r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"),
-        "path": re.compile(r"/" "[\\/\\.\\\"]"),
-        "pt-numb": re.compile(r"\b\d{6,12}\b"),
+        "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+        "phone": r"\b\+?[1-9]\d{1,14}\b",
+        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
+        "credit_card": r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b",
+        "ip4_address": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",
+        "ip6_address": r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b",
+        "path": r"/[\\/\\.\\\"]",
+        "pt-numb": r"\b\d{6,12}\b",
     }
 
     MASK_MAP = {

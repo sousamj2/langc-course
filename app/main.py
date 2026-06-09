@@ -10,7 +10,7 @@
 
 
 
-
+from datetime import datetime
 import time
 import os
 from contextlib import asynccontextmanager
@@ -69,7 +69,7 @@ async def lifespan (app: FastAPI):
     metrics = MetricsCollector()
     agent = ProductionAgent()
 
-    logger.info("All components initialized. Ready ro serve requests.")
+    logger.info("All components initialized. Ready to serve requests.")
 
     yield # App is running
 
