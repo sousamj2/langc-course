@@ -30,17 +30,17 @@ class JSONFormatter(logging.Formatter):
             log_obj.update(record.extra_data)
         return json.dump(log_obj)
 
-    def get_logger (name: str = "production-api") -> logging.Logger:
-        """Create a structure JSON logger."""
+def get_logger (name: str = "production-api") -> logging.Logger:
+    """Create a structure JSON logger."""
 
-        logger = logging.getLogger(name=name)
+    logger = logging.getLogger(name=name)
 
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            handler.setFormatter(JSONFormatter())
-            logger.addHandler(handler)
-            logger.setLevel(logging.INFO)
-        return logger
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(JSONFormatter())
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger
 
 # === Metrics Collector ===
 

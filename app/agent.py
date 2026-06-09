@@ -295,7 +295,8 @@ class ProductionAgent:
         # Initialize the state graph
         graph = StateGraph(AgentState)
 
-        graph.add_node("live",live_message)
+        # graph.add_node("live",live_message)
+        graph.add_node("live",secondary_message)
         graph.add_node("primary",primary_message)
         graph.add_node("secondary",secondary_message)
         graph.add_node("fallback",fallback_message)
@@ -351,6 +352,24 @@ class ProductionAgent:
 
     @traceable(name="production_agent_invoke")
     async def invoke(self, message: str) -> dict:
+        print("traceable running")
+        import os
+        print(f"LangSmith Environment Check:")
+        # print(f"  - LANGCHAIN_TRACING_V2: {os.environ.get('LANGCHAIN_TRACING_V2')}")
+        # print(f"  - LANGSMITH_TRACING: {os.environ.get('LANGSMITH_TRACING')}")
+        # print(f"  - LANGCHAIN_ENDPOINT: {os.environ.get('LANGCHAIN_ENDPOINT')}")
+        # print(f"  - LANGCHAIN_PROJECT: {os.environ.get('LANGCHAIN_PROJECT')}")
+        try:
+            from langsmith.run_helpers import get_current_run_tree
+            from langsmith import Client
+            run_tree = get_current_run_tree()
+            if run_tree:
+                print(f"  - LangSmith Active Run ID: {run_tree.id}")
+                ls_client = Client()
+                run_url = ls_client.get_run_url(run=run_tree)
+                print(f"  - LangSmith Run URL: {run_url}")
+        except Exception as ls_err:
+            print(f"Could not retrieve LangSmith info: {ls_err}")
         """
         Invoke the agent with a user message.
         Returns: {"response": str, "model_used": str, "error": str | None, "is_fallback": bool, "retry_count": int}

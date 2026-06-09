@@ -10,10 +10,10 @@ sys.path.append(str(project_root))
 from dotenv import load_dotenv
 load_dotenv()
 
-# Disable LangSmith tracing for standalone test to prevent DNS timeouts in sandboxed environments
+# Enable LangSmith tracing for standalone test (uncomment if you want to disable it to prevent DNS timeouts in sandboxed environments)
 import os
-os.environ["LANGCHAIN_TRACING_V2"] = "false"
-os.environ["LANGSMITH_TRACING_V2"] = "false"
+# os.environ["LANGCHAIN_TRACING_V2"] = "false"
+# os.environ["LANGSMITH_TRACING_V2"] = "false"
 
 from app.agent import ProductionAgent
 
@@ -24,9 +24,9 @@ async def main():
     print()
 
     queries = [
-        'What is LangGraph in one sentence?',
+        # 'What is LangGraph in one sentence?',
         'What is 2 + 2?',
-        'Explain the difference between RAG and fine-tuning in 2 sentences.',
+        # 'Explain the difference between RAG and fine-tuning in 2 sentences.',
     ]
 
     for query in queries:
@@ -41,7 +41,15 @@ async def main():
         print(f"Error: {result['error']}")
         print(f"Is fallback: {result['is_fallback']}")
         print("------------------------------")
-        print()
+    print("Flushing pending LangSmith traces...")
+    try:
+        from langsmith import Client
+        ls_client = Client()
+        ls_client.flush()
+        print("LangSmith traces successfully uploaded/flushed.")
+    except Exception as e:
+        print(f"Failed to flush LangSmith traces: {e}")
+    print()
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -5,6 +5,7 @@ Uses pydantic-settings for validated enviroment variables.
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pydantic import Field, AliasChoices
 
 class Settings(BaseSettings):
     """
@@ -28,10 +29,21 @@ class Settings(BaseSettings):
     verbose: bool = True
     
     # LangSmith
-    langsmith_tracing_v2: bool = True # Enable LangSmith tracing
-    langsmith_api_key: str  # API key for the LangSmith API
-    langsmith_endpoint: str = "https://api.smith.langchain.com" # LangSmith endpoint
-    langsmith_project_name: str = "production-api" # LangSmith project name
+    langsmith_tracing_v2: bool = Field(
+        default=True, 
+        validation_alias=AliasChoices("LANGCHAIN_TRACING", "LANGCHAIN_TRACING_V2", "LANGSMITH_TRACING", "LANGSMITH_TRACING_V2")
+    ) # Enable LangSmith tracing
+    langsmith_api_key: str = Field(
+        validation_alias=AliasChoices("LANGCHAIN_API_KEY", "LANGSMITH_API_KEY")
+    )  # API key for the LangSmith API
+    langsmith_endpoint: str = Field(
+        default="https://api.smith.langchain.com", 
+        validation_alias=AliasChoices("LANGCHAIN_ENDPOINT", "LANGSMITH_ENDPOINT")
+    ) # LangSmith endpoint
+    langsmith_project_name: str = Field(
+        default="production-api", 
+        validation_alias=AliasChoices("LANGCHAIN_PROJECT", "LANGSMITH_PROJECT")
+    ) # LangSmith project name
 
     # Application
     app_env: str = "development"
@@ -41,6 +53,39 @@ class Settings(BaseSettings):
     max_retries: int = 4 # primary + fallback + primary after 10 second delay + fallback.
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    def model_post_init(self, __context):
+        import os
+        # Export settings to os.environ so they are picked up by LangChain/LangSmith SDKs
+        # Only set them if they aren't already explicitly set in os.environ (e.g. overridden by tests)
+        tracing_str = "true" if self.langsmith_tracing_v2 else "false"
+        
+        if "LANGCHAIN_TRACING_V2" not in os.environ:
+            os.environ["LANGCHAIN_TRACING_V2"] = tracing_str
+        if "LANGSMITH_TRACING_V2" not in os.environ:
+            os.environ["LANGSMITH_TRACING_V2"] = tracing_str
+        if "LANGCHAIN_TRACING" not in os.environ:
+            os.environ["LANGCHAIN_TRACING"] = tracing_str
+        if "LANGSMITH_TRACING" not in os.environ:
+            os.environ["LANGSMITH_TRACING"] = tracing_str
+
+        if self.langsmith_api_key:
+            if "LANGCHAIN_API_KEY" not in os.environ:
+                os.environ["LANGCHAIN_API_KEY"] = self.langsmith_api_key
+            if "LANGSMITH_API_KEY" not in os.environ:
+                os.environ["LANGSMITH_API_KEY"] = self.langsmith_api_key
+
+        if self.langsmith_endpoint:
+            if "LANGCHAIN_ENDPOINT" not in os.environ:
+                os.environ["LANGCHAIN_ENDPOINT"] = self.langsmith_endpoint
+            if "LANGSMITH_ENDPOINT" not in os.environ:
+                os.environ["LANGSMITH_ENDPOINT"] = self.langsmith_endpoint
+
+        if self.langsmith_project_name:
+            if "LANGCHAIN_PROJECT" not in os.environ:
+                os.environ["LANGCHAIN_PROJECT"] = self.langsmith_project_name
+            if "LANGSMITH_PROJECT" not in os.environ:
+                os.environ["LANGSMITH_PROJECT"] = self.langsmith_project_name
 
     # Property functions are not enviroment variables but derived values (not cached)
     # This means they are calculated every time they are called
