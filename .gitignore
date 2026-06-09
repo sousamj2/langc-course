@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+.vscode
+uv.lock
+
+# Secrets
+.env
+
+# documents
+other
+*pdf
+
+
