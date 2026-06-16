@@ -116,11 +116,11 @@ class MetricsCollector:
         )
 
         return {
-            "requests_total": self._requests_total,
-            "errors_total": self._errors_total,
-            "latency_ms": f"{avg_latency:.2f}",
-            "tokens_input": self._tokens_input,
-            "tokens_output": self._tokens_output,
+            "total_requests": self._requests_total,
+            "total_errors": self._errors_total,
+            "avg_latency_ms": f"{avg_latency:.2f}",
+            "input_tokens": self._tokens_input,
+            "output_tokens": self._tokens_output,
             "cache_hits": self._cache_hits,
             "cache_misses": self._cache_misses,
             "cache_hit_rate": f"{cache_hit_rate:.2%}",

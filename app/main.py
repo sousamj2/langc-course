@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from langsmith import traceable
 from dotenv import load_dotenv
 
@@ -88,6 +89,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 
 # === Exception Handlers ===
@@ -138,67 +140,71 @@ async def chat(request: Request, body: ChatRequest):
     with RequestTimer() as timer:
         security_notes = []
 
-    # ---- Step 1: Security check ----
-    is_allowed, cleaned_message, notes = security.check_input(body.message)
-    security_notes.extend(notes)
+        # ---- Step 1: Security check ----
+        is_allowed, cleaned_message, notes = security.check_input(body.message)
+        security_notes.extend(notes)
 
-    if not is_allowed:
-        logger.warning("Request blocked by security", extra={"extra_data": {
-            "reason": notes,
-            "thread_id": body.thread_id,
-        }})
-        metrics.record_request(latency_ms=0, error=True)
-        raise HTTPException(
-            status_code=400,
-            detail="Your message was blocked by our security filters."
-        )
+        # print("security_notes:", security_notes)
 
-    # ---- Step 2: Cache lookup ----
-    if cache:
-        cached_response = cache.get(cleaned_message)
-        if cached_response:
-            metrics.record_request(latency_ms=0, cache_hit=True)
-            logger.info("Cache hit", extra={"extra_data": {
+        if not is_allowed:
+            logger.warning("Request blocked by security", extra={"extra_data": {
+                "reason": notes,
                 "thread_id": body.thread_id,
             }})
-            return ChatResponse(
-                response=cached_response,
-                thread_id=body.thread_id,
-                model_used="cache",
-                cache=True,
-                processing_time_ms=0,
+            metrics.record_request(success=False,latency_ms=0, error=True)
+            raise HTTPException(
+                status_code=400,
+                detail="Your message was blocked by our security filters."
             )
 
-    # ---- Step 3: Agent invocation ----
+        # ---- Step 2: Cache lookup ----
+        if cache:
+            cached_response = cache.get(cleaned_message)
+            if cached_response:
+                metrics.record_request(success=True, latency_ms=0, cache_hit=True)
+                logger.info("Cache hit", extra={"extra_data": {
+                    "thread_id": body.thread_id,
+                }})
+                return ChatResponse(
+                    response=cached_response,
+                    thread_id=body.thread_id,
+                    model_used="cache",
+                    cache=True,
+                    processing_time_ms=0,
+                    security_notes=security_notes,
+                )
 
-    try:
-        result = await agent.invoke(cleaned_message)
-    except Exception as e:
-        logger.error(f"Agent invocation failed: {e}", extra={"extra_data": {
-            "thread_id": body.thread_id,
-            "error": str(e),
-            }})
-        metrics.record_request(latency_ms=0, error=True)
-        raise HTTPException(
-            status_code=500,
-            detail="Error while processing your message. Please try again.",
-        )
-    response_text = result["response"]
-    model_used = result["model_used"]
-    is_fallback = result["is_fallback"]
-    
-    # ---- Step 4: Output validation ----
-    validated_response, output_warnings = security.check_output(response_text)
-    security_notes.extend(output_warnings)
+        # ---- Step 3: Agent invocation ----
 
-    # ---- Step 5: Cache Store ----
-    cache.set(cleaned_message, validated_response)
+        try:
+            result = await agent.invoke(cleaned_message)
+        except Exception as e:
+            logger.error(f"Agent invocation failed: {e}", extra={"extra_data": {
+                "thread_id": body.thread_id,
+                "error": str(e),
+                }})
+            metrics.record_request(latency_ms=0, error=True)
+            raise HTTPException(
+                status_code=500,
+                detail="Error while processing your message. Please try again.",
+            )
+        response_text = result["response"]
+        model_used = result["model_used"]
+        is_fallback = result["is_fallback"]
+        
+        # ---- Step 4: Output validation ----
+        validated_response, output_warnings = security.check_output(response_text)
+        security_notes.extend(output_warnings)
+
+        # ---- Step 5: Cache Store ----
+        cache.set(cleaned_message, validated_response)
 
     # ---- Step 6: Metrics and Logging ----
-    input_tokens = int(len(cleaned_message.split()) * 1.6)
+    input_tokens = int(len(cleaned_message.split()) * 1.3)
     output_tokens = int(len(validated_response.split()) * 1.3)
 
     metrics.record_request(
+        success=True,
         latency_ms=timer.elapsed_ms,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
@@ -218,6 +224,7 @@ async def chat(request: Request, body: ChatRequest):
         model_used=model_used,
         cache=False,
         processing_time_ms=round(timer.elapsed_ms, 2),
+        security_notes=security_notes,
     )
 
 
@@ -236,9 +243,10 @@ async def health():
 
     return HealthResponse(
         status="healthy" if all_healthy else "degraded",
-        enviroment=settings.app_env,
-        components=checks,
-        timestamp=datetime.utcnow().isoformat(),
+        environment=settings.app_env,
+        checks=checks,
+        # version=app.version,
+        # timestamp=datetime.utcnow().isoformat(),
     )
 
 @app.get("/metrics", response_model=MetricResponse)

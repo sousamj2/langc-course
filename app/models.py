@@ -4,7 +4,7 @@ Pydantic models for input validation and response structure
 """
 
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ChatRequest(BaseModel):
     """Incoming chat request."""
@@ -44,7 +44,8 @@ class ChatResponse(BaseModel):
     session_id: str = "NA"
     cache: bool = False
     processing_time_ms: float
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc()))
+    security_notes: list[str] = Field(default_factory=list)
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class HealthResponse(BaseModel):
     """Health check response."""
@@ -57,13 +58,12 @@ class MetricResponse(BaseModel):
     """Metrics endpoint response."""
     total_requests: int
     total_errors: int
-    error_rate: int
-    avg_latency_ms: float
-    cache_hit_rate: int
-    total_input_tokens: int
-    total_output_tokens: int
-    cache_miss_rate: int
-    total_cost: float
+    error_rate: str
+    avg_latency_ms: str
+    cache_hit_rate: str
+    cache_hits: int
+    input_tokens: int
+    output_tokens: int
 
 class ErrorResponse(BaseModel):
     """Standardized error response for consistency."""
