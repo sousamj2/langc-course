@@ -1,0 +1,40 @@
+# render.yaml - Infrastruture as Code for Render
+services:
+  - type: web
+    name: productions-langgraph-api
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: APP_ENV
+        value: "production"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: RATE_LIMIT
+        value: "20/minute"
+      - key: CACHE_TTL_SECONDS
+        value: "300"
+      - key: MAX_RETRIES
+        value: "3"
+      - key: LIVE_MODEL
+        value: gemini-3.1-flash-live-preview
+      - key: PRIMARY_MODEL
+        value: gemini-3.1-flash-lite
+      - key: SECONDARY_MODEL
+        value: gemma-4-31b-it
+      - key: FALLBACK_MODEL
+        value: gemma-4-26b-a4b-it
+      - key: GEMINI_API_KEY
+        sync: false # Must be set manually - NEVER commit secrets
+      - key: LANGSMITH_API_KEY
+        sync: false # Must be set manually
+      - key: LANGSMITH_TRACING_V2
+        value: "true"
+      - key: LANGSMITH_PROJECT
+        value: production-api
+    healthCheckPath: /health
+    autoDeploy: true

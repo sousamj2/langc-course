@@ -7,14 +7,21 @@ wheels/
 *.egg-info
 
 # Virtual environments
+venv
+uv.lock
 .venv
 .vscode
-uv.lock
+*.pyc
+*.pyo
+*.db
+*.sqlite
+.DS_Store
 
 # Secrets
 .env
 
 # documents
+.pytest_cache
 other
 *pdf
 
