@@ -15,6 +15,8 @@ from typing_extensions import TypedDict, Annotated
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_aws import ChatBedrockNovaSonic
+
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langsmith import traceable
 
@@ -51,6 +53,16 @@ class ProductionAgent:
 
     def __init__ (self):
         settings = get_settings()
+
+        # initialize AWS Bedrock NovaSonic LLM
+        self.aws_llm = ChatBedrockNovaSonic(
+            model=settings.aws_model,
+            temperature=settings.temperature,
+            max_tokens=settings.max_tokens,
+            timeout=settings.timeout,
+            streaming=settings.streaming,
+            verbose=settings.verbose,
+        )
 
         # gemini-3-flash-live - Bidirectional streaming with websocket connection. Up to 65k TPM with unlimitted RPM and RPD.
         self.live_llm = ChatGoogleGenerativeAI(

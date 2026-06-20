@@ -15,6 +15,12 @@ class Settings(BaseSettings):
 
     # config_key: config_type = default_value # comment to understand the config key
 
+    # AWS Configuration
+    aws_api_key: str = Field(validation_alias=AliasChoices("AWS_BEARER_TOKEN_BEDROCK", "AWS_API_KEY")) # AWS api key
+    aws_region: str = Field(validation_alias=AliasChoices("AWS_REGION", "AWS_REGION")) # AWS region
+    aws_model: str = Field(validation_alias=AliasChoices("AWS_MODEL", "AWS_MODEL")) # AWS model
+    
+
     # LLM Configurations
     gemini_api_key: str # API key for the Gemini API
     live_model: str = "gemini-3.1-flash-live-preview" # bi-directional streaming using a websocket connection. Up to 65k TPM with unlimitted RPM and RPD.
